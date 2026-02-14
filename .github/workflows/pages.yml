@@ -132,12 +132,12 @@ jobs:
                       <div class="card">
                           <h2>⚙️ 系统配置</h2>
                           <p>GitHub Actions 工作流、自动化脚本和部署配置。</p>
-                          <a href="./.github/workflows/">查看配置</a>
+                          <a href="https://github.com/realerich/marvin-backup/tree/master/.github/workflows" target="_blank">查看配置</a>
                       </div>
                       <div class="card">
                           <h2>📊 任务管理</h2>
                           <p>任务追踪、进度报告和项目管理自动化工具。</p>
-                          <a href="./task_manager.py">任务系统</a>
+                          <a href="https://github.com/realerich/marvin-backup/blob/master/task_manager.py" target="_blank">任务系统</a>
                       </div>
                   </div>
                   
