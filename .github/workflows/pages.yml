@@ -1,0 +1,224 @@
+name: Deploy GitHub Pages
+
+on:
+  push:
+    branches: [ master, main ]
+    paths:
+      - 'docs/**'
+      - 'README.md'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+        
+      - name: Build Documentation Site
+        run: |
+          mkdir -p _site
+          
+          # 创建首页
+          cat > _site/index.html << 'EOF'
+          <!DOCTYPE html>
+          <html lang="zh-CN">
+          <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>Marvin Documentation</title>
+              <style>
+                  * { margin: 0; padding: 0; box-sizing: border-box; }
+                  body {
+                      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                      line-height: 1.6;
+                      color: #333;
+                      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                      min-height: 100vh;
+                  }
+                  .container {
+                      max-width: 1200px;
+                      margin: 0 auto;
+                      padding: 40px 20px;
+                  }
+                  header {
+                      text-align: center;
+                      color: white;
+                      padding: 60px 0;
+                  }
+                  header h1 {
+                      font-size: 3em;
+                      margin-bottom: 20px;
+                      text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+                  }
+                  header p {
+                      font-size: 1.3em;
+                      opacity: 0.9;
+                  }
+                  .grid {
+                      display: grid;
+                      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+                      gap: 30px;
+                      margin-top: 40px;
+                  }
+                  .card {
+                      background: white;
+                      border-radius: 16px;
+                      padding: 30px;
+                      box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+                      transition: transform 0.3s, box-shadow 0.3s;
+                  }
+                  .card:hover {
+                      transform: translateY(-5px);
+                      box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+                  }
+                  .card h2 {
+                      color: #667eea;
+                      margin-bottom: 15px;
+                      font-size: 1.5em;
+                  }
+                  .card p {
+                      color: #666;
+                      margin-bottom: 20px;
+                  }
+                  .card a {
+                      display: inline-block;
+                      color: #667eea;
+                      text-decoration: none;
+                      font-weight: 600;
+                      padding: 10px 20px;
+                      border: 2px solid #667eea;
+                      border-radius: 8px;
+                      transition: all 0.3s;
+                  }
+                  .card a:hover {
+                      background: #667eea;
+                      color: white;
+                  }
+                  footer {
+                      text-align: center;
+                      color: white;
+                      padding: 40px 0;
+                      opacity: 0.8;
+                  }
+              </style>
+          </head>
+          <body>
+              <div class="container">
+                  <header>
+                      <h1>🤖 Marvin Documentation</h1>
+                      <p>AI 助手技术文档与项目资料库</p>
+                  </header>
+                  
+                  <div class="grid">
+                      <div class="card">
+                          <h2>📚 项目文档</h2>
+                          <p>查看完整的项目规划、架构设计和实施路线图。</p>
+                          <a href="./docs/">浏览文档</a>
+                      </div>
+                      <div class="card">
+                          <h2>⚙️ 系统配置</h2>
+                          <p>GitHub Actions 工作流、自动化脚本和部署配置。</p>
+                          <a href="./.github/workflows/">查看配置</a>
+                      </div>
+                      <div class="card">
+                          <h2>📊 任务管理</h2>
+                          <p>任务追踪、进度报告和项目管理自动化工具。</p>
+                          <a href="./task_manager.py">任务系统</a>
+                      </div>
+                  </div>
+                  
+                  <footer>
+                      <p>Generated with ❤️ by GitHub Actions</p>
+                      <p id="timestamp"></p>
+                  </footer>
+              </div>
+              <script>
+                  document.getElementById('timestamp').textContent = 
+                      'Last updated: ' + new Date().toLocaleString('zh-CN');
+              </script>
+          </body>
+          </html>
+          EOF
+          
+          # 复制 docs 目录
+          if [ -d "docs" ]; then
+            cp -r docs _site/
+          fi
+          
+          # 创建 docs 索引页
+          mkdir -p _site/docs
+          cat > _site/docs/index.html << 'EOF'
+          <!DOCTYPE html>
+          <html lang="zh-CN">
+          <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>文档目录 - Marvin</title>
+              <style>
+                  * { margin: 0; padding: 0; box-sizing: border-box; }
+                  body {
+                      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                      line-height: 1.6;
+                      color: #333;
+                      max-width: 900px;
+                      margin: 0 auto;
+                      padding: 40px 20px;
+                      background: #f5f5f5;
+                  }
+                  h1 { color: #667eea; margin-bottom: 30px; }
+                  .doc-list { background: white; border-radius: 12px; padding: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+                  .doc-item { padding: 20px; border-bottom: 1px solid #eee; }
+                  .doc-item:last-child { border-bottom: none; }
+                  .doc-item h3 { color: #333; margin-bottom: 8px; }
+                  .doc-item p { color: #666; font-size: 0.9em; }
+                  .doc-item a { color: #667eea; text-decoration: none; }
+                  .doc-item a:hover { text-decoration: underline; }
+                  .back { display: inline-block; margin-bottom: 20px; color: #667eea; text-decoration: none; }
+              </style>
+          </head>
+          <body>
+              <a href="../" class="back">← 返回首页</a>
+              <h1>📚 文档目录</h1>
+              <div class="doc-list">
+                  <div class="doc-item">
+                      <h3><a href="capability-expansion-plan.md">能力扩展计划</a></h3>
+                      <p>Marvin AI 助手的能力扩展路线图和实施计划</p>
+                  </div>
+                  <div class="doc-item">
+                      <h3><a href="feishu-project-setup.md">飞书项目配置</a></h3>
+                      <p>飞书集成、Bitable 配置和消息推送设置</p>
+                  </div>
+              </div>
+          </body>
+          </html>
+          EOF
+      
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./_site
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

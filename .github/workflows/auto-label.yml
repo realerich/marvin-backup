@@ -1,0 +1,113 @@
+name: Auto Label & Assign
+
+on:
+  issues:
+    types: [opened, edited]
+  pull_request:
+    types: [opened, edited]
+
+jobs:
+  label-and-assign:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
+    steps:
+      - name: Auto Label Issue
+        if: github.event_name == 'issues'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = context.payload.issue;
+            const title = issue.title.toLowerCase();
+            const body = issue.body?.toLowerCase() || '';
+            
+            const labels = [];
+            
+            // 根据标题自动打标签
+            if (title.includes('bug') || title.includes('错误') || title.includes('问题')) {
+              labels.push('bug');
+            }
+            if (title.includes('feature') || title.includes('功能') || title.includes('请求')) {
+              labels.push('enhancement');
+            }
+            if (title.includes('task') || title.includes('任务')) {
+              labels.push('task');
+            }
+            if (title.includes('doc') || title.includes('文档')) {
+              labels.push('documentation');
+            }
+            
+            // 根据优先级打标签
+            if (body.includes('p0') || body.includes('紧急')) {
+              labels.push('priority/P0');
+            } else if (body.includes('p1') || body.includes('高')) {
+              labels.push('priority/P1');
+            } else if (body.includes('p2') || body.includes('中')) {
+              labels.push('priority/P2');
+            } else if (body.includes('p3') || body.includes('低')) {
+              labels.push('priority/P3');
+            }
+            
+            if (labels.length > 0) {
+              github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                labels: labels
+              });
+            }
+            
+            // 自动分配
+            github.rest.issues.addAssignees({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.number,
+              assignees: ['realerich']
+            });
+            
+            // 添加欢迎评论
+            github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.number,
+              body: `👋 感谢提交！已自动分配并打标签。\n\n**当前标签**: ${labels.join(', ') || '暂无'}\n**处理人**: @realerich`
+            });
+
+      - name: Auto Label PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const files = await github.rest.pulls.listFiles({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: pr.number
+            });
+            
+            const labels = [];
+            const filePaths = files.data.map(f => f.filename);
+            
+            // 根据修改的文件打标签
+            if (filePaths.some(f => f.startsWith('.github/workflows/'))) {
+              labels.push('ci/cd');
+            }
+            if (filePaths.some(f => f.startsWith('docs/'))) {
+              labels.push('documentation');
+            }
+            if (filePaths.some(f => f.endsWith('.py'))) {
+              labels.push('python');
+            }
+            if (filePaths.some(f => f.includes('test'))) {
+              labels.push('testing');
+            }
+            
+            if (labels.length > 0) {
+              github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr.number,
+                labels: labels
+              });
+            }

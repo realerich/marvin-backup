@@ -1,0 +1,71 @@
+name: Code Quality Check
+
+on:
+  push:
+    branches: [ master, main ]
+    paths:
+      - '**.py'
+  pull_request:
+    branches: [ master, main ]
+    paths:
+      - '**.py'
+
+jobs:
+  lint-and-format:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install tools
+        run: |
+          pip install flake8 black isort pylint
+
+      - name: Check code formatting with Black
+        run: |
+          black --check --diff . || true
+
+      - name: Check import sorting with isort
+        run: |
+          isort --check-only --diff . || true
+
+      - name: Lint with flake8
+        run: |
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics || true
+          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+      - name: Static analysis with pylint
+        run: |
+          pylint --exit-zero --disable=all --enable=E,F *.py 2>/dev/null || true
+
+      - name: Post summary
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const summary = `
+            ## 🔍 Code Quality Report
+            
+            | Tool | Status |
+            |------|--------|
+            | Black (formatting) | ✅ Checked |
+            | isort (imports) | ✅ Checked |
+            | flake8 (linting) | ✅ Checked |
+            | pylint (analysis) | ✅ Checked |
+            
+            *注：当前设置为警告模式，不会阻止合并*
+            `;
+            
+            if (context.payload.pull_request) {
+              github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.payload.pull_request.number,
+                body: summary
+              });
+            }

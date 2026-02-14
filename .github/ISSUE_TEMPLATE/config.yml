@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 📖 查看文档
+    url: https://realerich.github.io/marvin-backup/
+    about: 在创建 Issue 前，请先查看文档
+  - name: 💬 快速提问
+    url: https://github.com/realerich/marvin-backup/discussions
+    about: 对于一般性问题，请使用 Discussions

@@ -1,0 +1,66 @@
+---
+name: 🐛 Bug 报告
+description: 报告一个问题或错误
+title: "[Bug] "
+labels: ["bug", "triage"]
+assignees:
+  - realerich
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢你的报告！请填写以下信息帮助我们快速定位问题。
+        
+  - type: textarea
+    id: description
+    attributes:
+      label: 问题描述
+      description: 清晰简洁地描述问题
+      placeholder: 发生了什么？
+    validations:
+      required: true
+      
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: 复现步骤
+      description: 如何复现这个问题
+      placeholder: |
+        1. 打开 ...
+        2. 点击 ...
+        3. 看到错误 ...
+    validations:
+      required: true
+      
+  - type: textarea
+    id: expected
+    attributes:
+      label: 预期行为
+      description: 你期望发生什么
+      placeholder: 应该显示 ...
+      
+  - type: textarea
+    id: actual
+    attributes:
+      label: 实际行为
+      description: 实际发生了什么
+      placeholder: 实际显示 ...
+      
+  - type: dropdown
+    id: priority
+    attributes:
+      label: 优先级
+      options:
+        - P0 - 紧急（系统不可用）
+        - P1 - 高（核心功能受影响）
+        - P2 - 中（有替代方案）
+        - P3 - 低（ cosmetic 问题）
+    validations:
+      required: true
+      
+  - type: textarea
+    id: environment
+    attributes:
+      label: 环境信息
+      description: 系统、版本等相关信息
+      render: shell

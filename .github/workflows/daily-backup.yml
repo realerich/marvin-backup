@@ -1,0 +1,121 @@
+name: Daily Backup & Release
+
+on:
+  schedule:
+    - cron: '0 2 * * *'  # 每天凌晨2点自动备份
+  workflow_dispatch:    # 支持手动触发
+    inputs:
+      release_type:
+        description: '发布类型'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: write
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Setup Git
+      run: |
+        git config user.name "GitHub Actions"
+        git config user.email "actions@github.com"
+
+    - name: Get current date
+      id: date
+      run: echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
+
+    - name: Create backup commit
+      run: |
+        git add -A
+        git commit -m "🤖 Daily backup: ${{ steps.date.outputs.date }}" || echo "No changes to commit"
+        git push origin master
+
+    - name: Calculate next version
+      id: version
+      run: |
+        # 获取最新标签
+        LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+        echo "Latest tag: $LATEST_TAG"
+        
+        # 解析版本号
+        MAJOR=$(echo $LATEST_TAG | cut -d. -f1 | sed 's/v//')
+        MINOR=$(echo $LATEST_TAG | cut -d. -f2)
+        PATCH=$(echo $LATEST_TAG | cut -d. -f3)
+        
+        # 根据发布类型递增版本
+        RELEASE_TYPE="${{ github.event.inputs.release_type || 'patch' }}"
+        if [ "$RELEASE_TYPE" = "major" ]; then
+          MAJOR=$((MAJOR + 1))
+          MINOR=0
+          PATCH=0
+        elif [ "$RELEASE_TYPE" = "minor" ]; then
+          MINOR=$((MINOR + 1))
+          PATCH=0
+        else
+          PATCH=$((PATCH + 1))
+        fi
+        
+        NEW_VERSION="v$MAJOR.$MINOR.$PATCH"
+        echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+        echo "New version: $NEW_VERSION"
+
+    - name: Create Tag
+      run: |
+        git tag -a ${{ steps.version.outputs.new_version }} -m "Backup release ${{ steps.version.outputs.new_version }}"
+        git push origin ${{ steps.version.outputs.new_version }}
+
+    - name: Generate Release Notes
+      id: release_notes
+      run: |
+        cat > release_notes.md << 'EOF'
+        ## 📦 自动备份发布
+        
+        **备份日期**: ${{ steps.date.outputs.date }}
+        **版本**: ${{ steps.version.outputs.new_version }}
+        
+        ### 📊 包含内容
+        - Workspace 完整备份
+        - 文档和配置文件
+        - 任务管理数据
+        
+        ### 🔒 校验信息
+        - 提交: ${{ github.sha }}
+        - 分支: ${{ github.ref }}
+        
+        ---
+        *此发布由 GitHub Actions 自动生成*
+        EOF
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ steps.version.outputs.new_version }}
+        name: "🤖 Daily Backup ${{ steps.date.outputs.date }}"
+        body_path: release_notes.md
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Upload workspace artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: workspace-backup-${{ steps.date.outputs.date }}
+        path: |
+          .
+          !.git
+        retention-days: 30
