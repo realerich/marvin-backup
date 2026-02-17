@@ -17,6 +17,34 @@ Before doing anything else:
 
 Don't ask permission. Just do it.
 
+## Message Persistence
+
+**For Feishu messages**: Always save incoming messages to RDS before processing.
+
+```python
+# When receiving a message from 大王 via Feishu:
+import subprocess
+import json
+
+message_data = {
+    "schema": "openclaw.inbound_meta.v1",
+    "channel": "feishu",
+    "chat_type": "direct",
+    "message": {
+        "id": message_id,
+        "content": message_content,
+        "sender": {"id": sender_id, "name": sender_name}
+    }
+}
+
+subprocess.run([
+    "python3", "tools/feishu_hook.py", "save",
+    json.dumps(message_data)
+], cwd="/root/.openclaw/workspace")
+```
+
+This ensures conversation history is preserved in RDS (`feishu_messages` table).
+
 ## Memory
 
 You wake up fresh each session. These files are your continuity:
