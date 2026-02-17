@@ -1,0 +1,28 @@
+// Marvin Architecture
+digraph {
+	rankdir=TB size="14,10"
+	node [fontsize=12 shape=box style="rounded,filled"]
+	{
+		rank=same
+		feishu [label="交互层
+Feishu/Lark" fillcolor="#E3F2FD"]
+	}
+	{
+		rank=same
+		rds [label="数据层
+RDS/PostgreSQL" fillcolor="#F3E5F5"]
+	}
+	{
+		rank=same
+		ecs [label="执行层
+ECS/OpenClaw" fillcolor="#E8F5E9"]
+	}
+	{
+		rank=same
+		github [label="代码层
+GitHub" fillcolor="#FFF3E0"]
+	}
+	feishu -> rds [label="real-time sync"]
+	rds -> ecs [label="data export"]
+	ecs -> github [label=backup]
+}
