@@ -138,23 +138,13 @@ def fetch_unread(config=None, limit=10):
                 # 解析日期
                 date = msg['Date']
                 
-                # 解析正文
-                body = ""
-                if msg.is_multipart():
-                    for part in msg.walk():
-                        content_type = part.get_content_type()
-                        if content_type == 'text/plain':
-                            body = part.get_payload(decode=True).decode('utf-8', errors='ignore')
-                            break
-                else:
-                    body = msg.get_payload(decode=True).decode('utf-8', errors='ignore')
-                
+                # 简化：只获取元数据，跳过正文解析（提升速度）
                 emails.append({
                     'id': eid.decode(),
                     'subject': subject[:100],
                     'from': from_addr,
                     'date': date,
-                    'body': body[:500]  # 只取前500字符
+                    'body': ''  # 正文可选，默认空
                 })
         
         imap.logout()
