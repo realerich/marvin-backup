@@ -1,0 +1,21 @@
+[
+  {
+    "id": 1,
+    "task_key": "vpn-setup-2026-09",
+    "title": "\u90e8\u7f72VPS+Clash VPN\u65b9\u6848",
+    "description": "\u8d2d\u4e70\u642c\u74e6\u5de5CN2 GIA VPS($49/\u5e74)\uff0c\u90e8\u7f72Xray/v2ray\u670d\u52a1\u7aef\uff0c\u914d\u7f6eClash\u5ba2\u6237\u7aef\u5b9e\u73b0\u667a\u80fd\u5206\u6d41\u3002\n\u53c2\u8003\u6587\u6863: /root/.openclaw/workspace/VPN-GUIDE.md\n\n\u6267\u884c\u6b65\u9aa4:\n1. \u8d2d\u4e70\u642c\u74e6\u5de5CN2 GIA-E\u5957\u9910\n2. \u4f7f\u7528\u4e00\u952e\u811a\u672c\u90e8\u7f72Xray\n3. \u4e0b\u8f7dClash\u5ba2\u6237\u7aef(\u5b89\u5353/Windows/Mac)\n4. \u914d\u7f6e\u5206\u6d41\u89c4\u5219\n5. \u6d4b\u8bd5\u56fd\u5185\u5916\u8bbf\u95ee",
+    "status": "pending",
+    "priority": "medium",
+    "due_date": "2026-09-01 00:00:00",
+    "assigned_to": null,
+    "tags": [
+      "vpn",
+      "network",
+      "infrastructure"
+    ],
+    "metadata": null,
+    "created_at": "2026-02-16 21:23:27.132384",
+    "updated_at": "2026-02-16 21:23:27.132384",
+    "completed_at": null
+  }
+]

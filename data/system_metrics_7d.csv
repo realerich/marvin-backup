@@ -1,0 +1,2 @@
+id,timestamp,hostname,cpu_percent,cpu_count,memory_total_gb,memory_used_gb,memory_percent,disk_total_gb,disk_used_gb,disk_percent,network_in_mb,network_out_mb,openclaw_status
+1,2026-02-16 19:45:27.636111,localhost,0.00,2,3.00,1.00,35.90,48.00,19.00,42.10,4770,574,running

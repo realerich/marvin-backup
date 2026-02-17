@@ -81,6 +81,7 @@ class RDSManager:
             self._create_memories_table(),
             self._create_webhook_logs_table(),
             self._create_tasks_table(),
+            self._create_feishu_messages_table(),
         ]
         
         with self.get_connection() as conn:
@@ -220,6 +221,28 @@ class RDSManager:
         CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status);
         CREATE INDEX IF NOT EXISTS idx_tasks_due ON tasks(due_date);
         CREATE INDEX IF NOT EXISTS idx_tasks_priority ON tasks(priority);
+        """
+    
+    def _create_feishu_messages_table(self):
+        return """
+        CREATE TABLE IF NOT EXISTS feishu_messages (
+            id SERIAL PRIMARY KEY,
+            message_id VARCHAR(100) UNIQUE,
+            sender_id VARCHAR(100),
+            sender_name VARCHAR(100),
+            chat_type VARCHAR(20),
+            chat_id VARCHAR(100),
+            content TEXT,
+            content_type VARCHAR(20) DEFAULT 'text',
+            is_processed BOOLEAN DEFAULT FALSE,
+            processed_action VARCHAR(50),
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            processed_at TIMESTAMP
+        );
+        CREATE INDEX IF NOT EXISTS idx_feishu_sender ON feishu_messages(sender_id);
+        CREATE INDEX IF NOT EXISTS idx_feishu_chat ON feishu_messages(chat_id);
+        CREATE INDEX IF NOT EXISTS idx_feishu_created ON feishu_messages(created_at);
+        CREATE INDEX IF NOT EXISTS idx_feishu_processed ON feishu_messages(is_processed);
         """
 
 

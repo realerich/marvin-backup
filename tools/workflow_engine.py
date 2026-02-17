@@ -1,243 +1,246 @@
 #!/usr/bin/env python3
 """
-智能工作流引擎
-条件触发、多步骤任务、自动化流程
+智能工作流引擎 - 增强版
+整合四层架构：飞书、RDS、ECS、GitHub
 """
 
 import json
+import sys
 import os
-import re
-import subprocess
-from datetime import datetime, timedelta
 from pathlib import Path
+from datetime import datetime, timedelta
+from typing import Dict, List, Any, Optional
+import subprocess
 
-WORKFLOW_DIR = Path("/root/.openclaw/workspace/config/workflows")
-WORKFLOW_DIR.mkdir(parents=True, exist_ok=True)
-WORKFLOW_LOG = Path("/root/.openclaw/workspace/logs/workflow.log")
-WORKFLOW_LOG.parent.mkdir(parents=True, exist_ok=True)
+sys.path.insert(0, str(Path(__file__).parent))
+
+# 导入各层工具
+from feishu_rds import FeishuMessageRDS
+from rds_github_sync import RDSGitHubSync
+
 
 class WorkflowEngine:
     """工作流引擎"""
     
     def __init__(self):
+        self.rds = FeishuMessageRDS()
+        self.github_sync = RDSGitHubSync()
         self.workflows = self._load_workflows()
     
     def _load_workflows(self):
-        """加载所有工作流"""
-        workflows = {}
-        for wf_file in WORKFLOW_DIR.glob("*.json"):
-            with open(wf_file, 'r') as f:
-                workflows[wf_file.stem] = json.load(f)
-        return workflows
-    
-    def _save_workflow(self, name, workflow):
-        """保存工作流"""
-        wf_file = WORKFLOW_DIR / f"{name}.json"
-        with open(wf_file, 'w') as f:
-            json.dump(workflow, f, indent=2)
-    
-    def create_workflow(self, name, trigger, conditions, actions, description=""):
-        """创建工作流"""
-        workflow = {
-            'name': name,
-            'description': description,
-            'enabled': True,
-            'created_at': datetime.now().isoformat(),
-            'trigger': trigger,
-            'conditions': conditions,
-            'actions': actions
+        """加载预定义工作流"""
+        return {
+            'morning_routine': {
+                'name': '晨间例行',
+                'schedule': '0 8 * * 1-5',
+                'steps': [
+                    {'action': 'market_briefing', 'target': 'feishu'},
+                    {'action': 'check_emails', 'target': 'feishu+rds'},
+                    {'action': 'sync_github', 'target': 'github'},
+                ]
+            },
+            'system_health_check': {
+                'name': '系统健康检查',
+                'schedule': '0 * * * *',
+                'steps': [
+                    {'action': 'system_monitor', 'target': 'rds'},
+                    {'action': 'check_alerts', 'target': 'feishu'},
+                    {'action': 'update_github_status', 'target': 'github'},
+                ]
+            },
+            'data_sync': {
+                'name': '数据同步',
+                'schedule': '0 */6 * * *',
+                'steps': [
+                    {'action': 'export_metrics', 'target': 'github'},
+                    {'action': 'export_tasks', 'target': 'github'},
+                    {'action': 'sync_feishu_to_github', 'target': 'github'},
+                ]
+            },
+            'daily_cleanup': {
+                'name': '每日清理',
+                'schedule': '0 2 * * *',
+                'steps': [
+                    {'action': 'archive_old_emails', 'target': 'rds'},
+                    {'action': 'cleanup_logs', 'target': 'ecs'},
+                    {'action': 'backup_to_github', 'target': 'github'},
+                ]
+            }
         }
-        
-        self._save_workflow(name, workflow)
-        self.workflows[name] = workflow
-        
-        return f"✅ 工作流 '{name}' 已创建"
     
-    def evaluate_condition(self, condition, context):
-        """评估条件"""
-        cond_type = condition.get('type')
+    def execute_step(self, step: Dict[str, str]) -> bool:
+        """执行单个步骤"""
+        action = step['action']
+        target = step['target']
         
-        if cond_type == 'contains':
-            field = condition.get('field')
-            keyword = condition.get('keyword')
-            value = context.get(field, '')
-            return keyword in value
+        print(f"  → 执行: {action} → {target}")
         
-        elif cond_type == 'regex':
-            field = condition.get('field')
-            pattern = condition.get('pattern')
-            value = context.get(field, '')
-            return bool(re.search(pattern, value))
+        try:
+            if action == 'market_briefing':
+                return self._run_market_briefing(target)
+            elif action == 'check_emails':
+                return self._check_emails(target)
+            elif action == 'system_monitor':
+                return self._system_monitor(target)
+            elif action == 'sync_github':
+                return self._sync_to_github()
+            elif action == 'export_metrics':
+                return self.github_sync.export_system_metrics(days=7)
+            elif action == 'export_tasks':
+                return self.github_sync.export_tasks()
+            elif action == 'sync_feishu_to_github':
+                return self._sync_feishu_to_github()
+            else:
+                print(f"    ⚠️ 未知动作: {action}")
+                return False
+        except Exception as e:
+            print(f"    ❌ 执行失败: {e}")
+            return False
+    
+    def _run_market_briefing(self, target):
+        """运行盘前简报"""
+        result = subprocess.run(
+            ['python3', 'tools/market_briefing.py'],
+            capture_output=True,
+            text=True,
+            cwd='/root/.openclaw/workspace'
+        )
         
-        elif cond_type == 'threshold':
-            field = condition.get('field')
-            operator = condition.get('operator', '>')
-            threshold = condition.get('value')
-            value = context.get(field, 0)
-            
-            if operator == '>':
-                return value > threshold
-            elif operator == '<':
-                return value < threshold
-            elif operator == '>=':
-                return value >= threshold
-            elif operator == '<=':
-                return value <= threshold
-            elif operator == '==':
-                return value == threshold
-        
-        elif cond_type == 'time_range':
-            start = condition.get('start', '00:00')
-            end = condition.get('end', '23:59')
-            now = datetime.now().strftime('%H:%M')
-            return start <= now <= end
-        
+        if result.returncode == 0:
+            print(f"    ✅ 盘前简报生成成功")
+            # TODO: 发送到飞书
+            return True
         return False
     
-    def execute_action(self, action, context):
-        """执行动作"""
-        action_type = action.get('type')
+    def _check_emails(self, target):
+        """检查邮件"""
+        result = subprocess.run(
+            ['python3', 'tools/email_check.py'],
+            capture_output=True,
+            text=True,
+            cwd='/root/.openclaw/workspace'
+        )
         
-        if action_type == 'command':
-            cmd = action.get('command')
-            try:
-                result = subprocess.run(cmd, shell=True, capture_output=True, 
-                                      text=True, timeout=60)
-                return {
-                    'success': result.returncode == 0,
-                    'stdout': result.stdout[:500],
-                    'stderr': result.stderr[:500]
-                }
-            except Exception as e:
-                return {'success': False, 'error': str(e)}
-        
-        elif action_type == 'notification':
-            message = action.get('message', '')
-            # 替换变量
-            for key, value in context.items():
-                message = message.replace(f'{{{key}}}', str(value))
-            return {'success': True, 'message': message}
-        
-        elif action_type == 'webhook':
-            url = action.get('url')
-            # 实际实现需要requests库
-            return {'success': True, 'webhook': url}
-        
-        elif action_type == 'calendar':
-            # 创建日历事件
-            return {'success': True, 'action': 'create_calendar_event'}
-        
-        return {'success': False, 'error': 'Unknown action type'}
+        success = result.returncode == 0
+        if success and 'feishu' in target:
+            # 保存到 RDS
+            pass
+        return success
     
-    def run_workflow(self, name, context=None):
-        """运行工作流"""
-        if name not in self.workflows:
-            return {'error': f'Workflow {name} not found'}
+    def _system_monitor(self, target):
+        """系统监控"""
+        result = subprocess.run(
+            ['python3', 'tools/system_monitor.py'],
+            capture_output=True,
+            text=True,
+            cwd='/root/.openclaw/workspace'
+        )
+        return result.returncode == 0
+    
+    def _sync_to_github(self):
+        """同步到 GitHub"""
+        result = subprocess.run(
+            ['python3', 'tools/github_core.py', 'backup'],
+            capture_output=True,
+            text=True,
+            cwd='/root/.openclaw/workspace'
+        )
+        return result.returncode == 0
+    
+    def _sync_feishu_to_github(self):
+        """同步飞书消息到 GitHub"""
+        from feishu_to_github import FeishuToGitHub
+        converter = FeishuToGitHub()
+        count = converter.scan_and_convert(limit=5)
+        return count >= 0
+    
+    def run_workflow(self, workflow_name: str) -> bool:
+        """运行指定工作流"""
+        if workflow_name not in self.workflows:
+            print(f"❌ 未知工作流: {workflow_name}")
+            return False
         
-        workflow = self.workflows[name]
+        workflow = self.workflows[workflow_name]
+        print(f"\n🔄 运行工作流: {workflow['name']}")
+        print("=" * 50)
         
-        if not workflow.get('enabled'):
-            return {'error': 'Workflow is disabled'}
-        
-        context = context or {}
-        
-        # 评估条件
-        conditions_met = True
-        for condition in workflow.get('conditions', []):
-            if not self.evaluate_condition(condition, context):
-                conditions_met = False
-                break
-        
-        if not conditions_met:
-            return {'success': False, 'reason': 'Conditions not met'}
-        
-        # 执行动作
         results = []
-        for action in workflow.get('actions', []):
-            result = self.execute_action(action, context)
-            results.append(result)
-            
-            # 如果动作失败且配置了停止策略
-            if not result.get('success') and action.get('stop_on_error'):
-                break
+        for i, step in enumerate(workflow['steps'], 1):
+            print(f"\n步骤 {i}/{len(workflow['steps'])}")
+            results.append(self.execute_step(step))
         
-        # 记录日志
-        self._log_execution(name, context, results)
+        success = all(results)
+        print("\n" + "=" * 50)
+        print(f"{'✅' if success else '⚠️'} 工作流完成: {sum(results)}/{len(results)} 步骤成功")
         
-        return {
-            'success': True,
-            'workflow': name,
-            'results': results
-        }
+        return success
     
-    def _log_execution(self, name, context, results):
-        """记录执行日志"""
-        log_entry = {
-            'timestamp': datetime.now().isoformat(),
-            'workflow': name,
-            'context': context,
-            'results': results
-        }
+    def run_all(self):
+        """运行所有工作流"""
+        print("🚀 运行所有工作流")
+        print("=" * 50)
         
-        with open(WORKFLOW_LOG, 'a') as f:
-            f.write(json.dumps(log_entry) + '\n')
+        results = {}
+        for name in self.workflows:
+            results[name] = self.run_workflow(name)
+        
+        print("\n" + "=" * 50)
+        print("📊 工作流执行总结")
+        for name, success in results.items():
+            status = "✅" if success else "❌"
+            print(f"  {status} {self.workflows[name]['name']}")
+        
+        return all(results.values())
     
     def list_workflows(self):
         """列出所有工作流"""
-        return self.workflows
-    
-    def delete_workflow(self, name):
-        """删除工作流"""
-        if name in self.workflows:
-            wf_file = WORKFLOW_DIR / f"{name}.json"
-            if wf_file.exists():
-                wf_file.unlink()
-            del self.workflows[name]
-            return True
-        return False
+        print("📋 可用工作流")
+        print("=" * 50)
+        
+        for name, workflow in self.workflows.items():
+            print(f"\n{workflow['name']} ({name})")
+            print(f"  定时: {workflow['schedule']}")
+            print(f"  步骤: {len(workflow['steps'])}")
+            for i, step in enumerate(workflow['steps'], 1):
+                print(f"    {i}. {step['action']} → {step['target']}")
 
 
-# 预置工作流模板
+# 预定义工作流模板
 WORKFLOW_TEMPLATES = {
-    'email_to_calendar': {
-        'name': '邮件自动创建日历',
-        'description': '收到包含"会议"的邮件时自动创建日历事件',
-        'trigger': {'type': 'email', 'event': 'received'},
-        'conditions': [
-            {'type': 'contains', 'field': 'subject', 'keyword': '会议'}
-        ],
+    'task_from_feishu': {
+        'name': '飞书任务自动处理',
+        'trigger': 'feishu_message',
+        'condition': 'content contains ["任务", "todo", "记得"]',
         'actions': [
-            {'type': 'calendar', 'action': 'create_event'},
-            {'type': 'notification', 'message': '已为您创建会议日程'}
+            {'action': 'save_to_rds', 'table': 'tasks'},
+            {'action': 'create_github_issue', 'label': 'task'},
+            {'action': 'notify_user', 'message': '任务已创建'}
         ]
     },
-    'disk_cleanup': {
-        'name': '磁盘清理',
-        'description': '磁盘使用率超过90%时自动清理',
-        'trigger': {'type': 'schedule', 'cron': '0 * * * *'},
-        'conditions': [
-            {'type': 'threshold', 'field': 'disk_percent', 'operator': '>', 'value': 90}
-        ],
+    'alert_handler': {
+        'name': '系统警报处理',
+        'trigger': 'system_alert',
+        'condition': 'severity in ["high", "critical"]',
         'actions': [
-            {'type': 'command', 'command': 'find /var/log -name "*.log" -mtime +7 -delete'},
-            {'type': 'notification', 'message': '磁盘清理完成，当前使用率: {disk_percent}%'}
+            {'action': 'notify_feishu', 'urgent': True},
+            {'action': 'create_github_issue', 'label': 'alert'},
+            {'action': 'log_to_rds', 'table': 'alerts'}
         ]
     },
     'daily_summary': {
-        'name': '每日汇总',
-        'description': '每天晚上9点发送每日汇总',
-        'trigger': {'type': 'schedule', 'cron': '0 21 * * *'},
-        'conditions': [],
+        'name': '每日摘要生成',
+        'trigger': 'cron(0 21 * * *)',
         'actions': [
-            {'type': 'command', 'command': 'cd /root/.openclaw/workspace && python3 tools/email_smart.py summary'},
-            {'type': 'command', 'command': 'cd /root/.openclaw/workspace && python3 tools/system_monitor.py'},
-            {'type': 'notification', 'message': '每日汇总已生成'}
+            {'action': 'generate_summary', 'sources': ['tasks', 'emails', 'metrics']},
+            {'action': 'save_to_rds', 'table': 'daily_reports'},
+            {'action': 'send_to_feishu'}
         ]
     }
 }
 
 
 def main():
+    """命令行工具"""
     import sys
     
     engine = WorkflowEngine()
@@ -245,67 +248,31 @@ def main():
     if len(sys.argv) < 2:
         print("🤖 智能工作流引擎")
         print("\n用法:")
-        print("  python3 workflow_engine.py create <名称> <模板>")
-        print("  python3 workflow_engine.py list")
-        print("  python3 workflow_engine.py run <名称> [JSON上下文]")
-        print("  python3 workflow_engine.py delete <名称>")
-        print("  python3 workflow_engine.py templates")
-        print("\n可用模板:")
-        for name, template in WORKFLOW_TEMPLATES.items():
-            print(f"  - {name}: {template['description']}")
+        print("  python3 workflow_engine.py list           # 列出工作流")
+        print("  python3 workflow_engine.py run <name>     # 运行指定工作流")
+        print("  python3 workflow_engine.py run-all        # 运行所有工作流")
+        print("\n示例:")
+        print("  python3 workflow_engine.py run morning_routine")
         sys.exit(1)
     
     cmd = sys.argv[1]
     
-    if cmd == 'create':
-        name = sys.argv[2]
-        template_name = sys.argv[3]
-        
-        if template_name in WORKFLOW_TEMPLATES:
-            template = WORKFLOW_TEMPLATES[template_name]
-            result = engine.create_workflow(
-                name,
-                template['trigger'],
-                template['conditions'],
-                template['actions'],
-                template['description']
-            )
-            print(result)
-        else:
-            print(f"❌ 未知模板: {template_name}")
-    
-    elif cmd == 'list':
-        workflows = engine.list_workflows()
-        print(f"共有 {len(workflows)} 个工作流:")
-        for name, wf in workflows.items():
-            status = "🟢" if wf.get('enabled') else "🔴"
-            print(f"\n{status} {name}")
-            print(f"   {wf.get('description', '无描述')}")
+    if cmd == 'list':
+        engine.list_workflows()
     
     elif cmd == 'run':
-        name = sys.argv[2]
-        context = json.loads(sys.argv[3]) if len(sys.argv) > 3 else {}
-        result = engine.run_workflow(name, context)
-        print(json.dumps(result, indent=2, ensure_ascii=False))
+        if len(sys.argv) < 3:
+            print("❌ 请指定工作流名称")
+            sys.exit(1)
+        workflow_name = sys.argv[2]
+        engine.run_workflow(workflow_name)
     
-    elif cmd == 'delete':
-        name = sys.argv[2]
-        if engine.delete_workflow(name):
-            print(f"✅ 工作流 '{name}' 已删除")
-        else:
-            print(f"❌ 工作流不存在")
-    
-    elif cmd == 'templates':
-        print("可用模板:")
-        for name, template in WORKFLOW_TEMPLATES.items():
-            print(f"\n📋 {name}")
-            print(f"   {template['description']}")
-            print(f"   触发: {template['trigger']}")
-            print(f"   条件: {len(template['conditions'])} 个")
-            print(f"   动作: {len(template['actions'])} 个")
+    elif cmd == 'run-all':
+        engine.run_all()
     
     else:
-        print(f"未知命令: {cmd}")
+        print(f"❌ 未知命令: {cmd}")
+
 
 if __name__ == '__main__':
     main()

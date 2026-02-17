@@ -1,0 +1,18 @@
+[
+  {
+    "id": 1,
+    "timestamp": "2026-02-16 19:45:27.636111",
+    "hostname": "localhost",
+    "cpu_percent": "0.00",
+    "cpu_count": 2,
+    "memory_total_gb": "3.00",
+    "memory_used_gb": "1.00",
+    "memory_percent": "35.90",
+    "disk_total_gb": "48.00",
+    "disk_used_gb": "19.00",
+    "disk_percent": "42.10",
+    "network_in_mb": 4770,
+    "network_out_mb": 574,
+    "openclaw_status": "running"
+  }
+]

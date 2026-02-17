@@ -1,0 +1,26 @@
+# Marvin 环境依赖
+# 安装: pip3 install -r requirements.txt --break-system-packages
+
+# 数据库
+psycopg2-binary>=2.9.0
+
+# 数据处理
+pandas>=2.0.0
+numpy>=1.24.0
+
+# 金融数据
+akshare>=1.10.0
+
+# HTTP 请求
+requests>=2.31.0
+urllib3>=2.0.0
+
+# 工具
+python-dateutil>=2.8.0
+pytz>=2023.3
+
+# 配置解析
+PyYAML>=6.0
+
+# 向量数据库 (可选，用于记忆系统)
+# chromadb>=0.4.0

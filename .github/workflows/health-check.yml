@@ -1,0 +1,172 @@
+name: 系统健康检查上报
+
+on:
+  # 定时触发（每30分钟）
+  schedule:
+    - cron: '*/30 * * * *'
+  # 手动触发
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  health-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          
+      - name: Install dependencies
+        run: |
+          pip install requests psycopg2-binary
+          
+      - name: Health check and update status
+        env:
+          RDS_HOST: ${{ secrets.RDS_HOST }}
+          RDS_PORT: ${{ secrets.RDS_PORT }}
+          RDS_DB: ${{ secrets.RDS_DB }}
+          RDS_USER: ${{ secrets.RDS_USER }}
+          RDS_PASSWORD: ${{ secrets.RDS_PASSWORD }}
+        run: |
+          python3 << 'EOF'
+          import json
+          import psycopg2
+          from datetime import datetime
+          import os
+          
+          # 从 RDS 获取最新状态
+          try:
+              conn = psycopg2.connect(
+                  host=os.environ['RDS_HOST'],
+                  port=os.environ['RDS_PORT'],
+                  user=os.environ['RDS_USER'],
+                  password=os.environ['RDS_PASSWORD'],
+                  database=os.environ['RDS_DB']
+              )
+              
+              cursor = conn.cursor()
+              
+              # 获取最新系统指标
+              cursor.execute("""
+                  SELECT timestamp, cpu_percent, memory_percent, disk_percent, openclaw_status
+                  FROM system_metrics
+                  ORDER BY timestamp DESC
+                  LIMIT 1
+              """)
+              
+              row = cursor.fetchone()
+              
+              # 获取24小时统计
+              cursor.execute("""
+                  SELECT 
+                      AVG(cpu_percent) as avg_cpu,
+                      MAX(cpu_percent) as max_cpu,
+                      AVG(memory_percent) as avg_mem,
+                      MAX(memory_percent) as max_mem
+                  FROM system_metrics
+                  WHERE timestamp > NOW() - INTERVAL '24 hours'
+              """)
+              
+              stats = cursor.fetchone()
+              
+              # 获取任务统计
+              cursor.execute("""
+                  SELECT status, COUNT(*) FROM tasks GROUP BY status
+              """)
+              
+              tasks = {row[0]: row[1] for row in cursor.fetchall()}
+              
+              # 获取飞书消息统计
+              cursor.execute("""
+                  SELECT COUNT(*) FROM feishu_messages
+                  WHERE created_at > NOW() - INTERVAL '24 hours'
+              """)
+              
+              feishu_count = cursor.fetchone()[0]
+              
+              conn.close()
+              
+              # 生成状态报告
+              status = {
+                  'checked_at': datetime.now().isoformat(),
+                  'system': {
+                      'last_update': row[0].isoformat() if row else None,
+                      'cpu_percent': row[1] if row else None,
+                      'memory_percent': row[2] if row else None,
+                      'disk_percent': row[3] if row else None,
+                      'openclaw_status': row[4] if row else 'unknown'
+                  },
+                  'stats_24h': {
+                      'avg_cpu': round(stats[0], 2) if stats[0] else 0,
+                      'max_cpu': round(stats[1], 2) if stats[1] else 0,
+                      'avg_memory': round(stats[2], 2) if stats[2] else 0,
+                      'max_memory': round(stats[3], 2) if stats[3] else 0
+                  },
+                  'tasks': tasks,
+                  'feishu_messages_24h': feishu_count
+              }
+              
+              # 保存状态文件
+              with open('status.json', 'w') as f:
+                  json.dump(status, f, indent=2)
+              
+              print("✅ 状态已更新")
+              
+          except Exception as e:
+              print(f"❌ 获取状态失败: {e}")
+              # 创建错误状态
+              with open('status.json', 'w') as f:
+                  json.dump({
+                      'checked_at': datetime.now().isoformat(),
+                      'error': str(e),
+                      'system': {'openclaw_status': 'offline'}
+                  }, f, indent=2)
+          EOF
+          
+      - name: Update status file
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add status.json
+          git diff --cached --quiet || git commit -m "更新系统状态 - $(date +%Y-%m-%d %H:%M)"
+          git push || echo "无更新"
+          
+      - name: Generate status badge
+        run: |
+          python3 << 'EOF'
+          import json
+          
+          try:
+              with open('status.json', 'r') as f:
+                  status = json.load(f)
+              
+              # 确定状态
+              if status.get('system', {}).get('openclaw_status') == 'running':
+                  badge = '🟢 在线'
+              else:
+                  badge = '🔴 离线'
+              
+              # 更新 README
+              with open('README.md', 'r') as f:
+                  content = f.read()
+              
+              # 替换状态徽章
+              import re
+              content = re.sub(r'系统状态: .*', f'系统状态: {badge}', content)
+              
+              with open('README.md', 'w') as f:
+                  f.write(content)
+                  
+          except Exception as e:
+              print(f"生成徽章失败: {e}")
+          EOF
+          
+          git add README.md
+          git diff --cached --quiet || git commit -m "更新状态徽章"
+          git push || echo "无更新"

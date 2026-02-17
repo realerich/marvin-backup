@@ -1,0 +1,85 @@
+version: '3.8'
+
+services:
+  # Marvin/OpenClaw 主服务
+  marvin:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: marvin
+    restart: unless-stopped
+    
+    # 环境变量
+    environment:
+      - TZ=Asia/Shanghai
+      - OPENCLAW_CONFIG=/root/.openclaw/config
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+      - RDS_HOST=${RDS_HOST}
+      - RDS_PORT=${RDS_PORT}
+      - RDS_DB=${RDS_DB}
+      - RDS_USER=${RDS_USER}
+      - RDS_PASSWORD=${RDS_PASSWORD}
+    
+    # 挂载卷
+    volumes:
+      # 工作目录
+      - ./workspace:/root/.openclaw/workspace
+      # 配置文件
+      - ./config:/root/.openclaw/config
+      # 日志
+      - ./logs:/root/.openclaw/logs
+      # 备份数据
+      - ./backups:/root/.openclaw/backups
+    
+    # 网络
+    networks:
+      - marvin-network
+    
+    # 健康检查
+    healthcheck:
+      test: ["CMD", "openclaw", "status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # 可选：PostgreSQL 本地实例（开发测试用）
+  # 生产环境使用阿里云RDS
+  postgres:
+    image: postgres:14-alpine
+    container_name: marvin-postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=marvin
+      - POSTGRES_PASSWORD=Crimson@13
+      - POSTGRES_DB=marvin_db
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - marvin-network
+    profiles:
+      - local-db
+
+  # 可选：Redis（用于缓存/队列）
+  redis:
+    image: redis:7-alpine
+    container_name: marvin-redis
+    restart: unless-stopped
+    volumes:
+      - redis-data:/data
+    networks:
+      - marvin-network
+    profiles:
+      - cache
+
+# 网络
+networks:
+  marvin-network:
+    driver: bridge
+
+# 卷
+volumes:
+  postgres-data:
+  redis-data:
