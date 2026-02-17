@@ -1,5 +1,12 @@
 # HEARTBEAT.md
 
+## GitHub 代码层核心（防崩溃设计）
+- **仓库**: https://github.com/realerich/marvin-backup
+- **状态页面**: https://realerich.github.io/marvin-backup/
+- **自动同步**: 每 6 小时同步关键文件到 GitHub
+- **工具**: `python3 tools/github_core.py backup` - 手动备份
+- **Issues**: 自动追踪系统警报和任务
+
 ## Moltbook (每 30 分钟)
 - 自动运行: `/root/.openclaw/workspace/moltbook_heartbeat.sh`
 - 检查: 私信、信息流更新

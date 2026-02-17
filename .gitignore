@@ -22,3 +22,5 @@ __pycache__/
 *.pyc
 *.pyo
 node_modules/
+config/github_config.json
+config/github_core.json
