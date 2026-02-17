@@ -1,11 +1,11 @@
 {
-  "generated_at": "2026-02-17T18:00:31.709711",
+  "generated_at": "2026-02-18T00:00:43.483370",
   "summary": {
     "system_24h": {
       "avg_cpu": 0,
       "max_cpu": 0,
-      "avg_memory": "35.90",
-      "max_memory": "35.90"
+      "avg_memory": 0,
+      "max_memory": 0
     },
     "tasks": {
       "pending": 1
