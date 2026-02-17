@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-02-17T08:45:20.305298",
+  "generated_at": "2026-02-17T12:00:32.965010",
   "summary": {
     "system_24h": {
       "avg_cpu": 0,
@@ -10,6 +10,6 @@
     "tasks": {
       "pending": 1
     },
-    "feishu_messages_24h": 0
+    "feishu_messages_24h": 4
   }
 }

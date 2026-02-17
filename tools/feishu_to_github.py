@@ -193,7 +193,7 @@ class FeishuToGitHub:
             feishu_db = FeishuMessageRDS()
             
             # 获取未处理的消息
-            with feishu_db.rds.get_connection() as conn:
+            with feishu_db.manager.pool.get_connection() as conn:
                 with conn.cursor() as cursor:
                     cursor.execute("""
                         SELECT * FROM feishu_messages
