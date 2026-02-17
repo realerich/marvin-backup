@@ -38,20 +38,57 @@
 
 ### 1. 飞书 ↔ RDS (交互层 ↔ 数据层)
 
-**功能**: 所有飞书消息自动存储到 RDS
+**功能**: 所有飞书消息自动存储到 RDS (健壮版)
 
-**工具**: `tools/feishu_rds.py`
+**工具**: 
+- `tools/rds_pool.py` - 连接池管理
+- `tools/feishu_rds.py` - RDS操作
+- `tools/feishu_sync.py` - 同步协调
+
+**架构**:
+```
+飞书消息
+    ↓
+┌─────────────────────────────────────┐
+│  feishu_sync.py (同步协调器)         │
+│  - 优先尝试 RDS 保存                 │
+│  - 失败时写入本地队列                 │
+└─────────────────────────────────────┘
+    ↓ 成功                    ↓ 失败
+┌─────────────┐         ┌─────────────────────┐
+│  RDS        │         │ 本地队列文件         │
+│  (PostgreSQL)│        │ feishu_messages_    │
+└─────────────┘         │   queue.json        │
+                        └─────────────────────┘
+                                    ↓
+                        ┌─────────────────────┐
+                        │ 定时任务每10分钟同步 │
+                        │ feishu-rds-sync     │
+                        └─────────────────────┘
+```
+
+**健壮性设计**:
+- 连接池复用 (maxconn=10)
+- 自动重试 (3次)
+- 本地队列兜底
+- 定时同步补偿
 
 **使用**:
 ```bash
-# 保存消息
-python3 tools/feishu_rds.py save <message_id> <sender> <content>
+# 测试连接
+python3 tools/rds_pool.py test
 
-# 搜索消息历史
-python3 tools/feishu_rds.py search <keyword>
+# 保存测试消息
+python3 tools/feishu_sync.py test
 
 # 查看统计
 python3 tools/feishu_rds.py stats
+
+# 搜索历史
+python3 tools/feishu_rds.py search "关键词"
+
+# 手动同步队列
+python3 tools/feishu_sync.py sync
 ```
 
 **表结构**:
@@ -67,6 +104,8 @@ CREATE TABLE feishu_messages (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 ```
+
+**详细文档**: [docs/FEISHU-RDS-SYNC.md](docs/FEISHU-RDS-SYNC.md)
 
 ### 2. RDS ↔ GitHub (数据层 ↔ 代码层)
 
