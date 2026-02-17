@@ -1,0 +1,29 @@
+{
+  "python_deps": [
+    "psutil",
+    "google-auth",
+    "google-auth-oauthlib",
+    "google-auth-httplib2",
+    "google-api-python-client",
+    "pyttsx3",
+    "speechrecognition",
+    "sentence-transformers",
+    "pandas",
+    "numpy",
+    "matplotlib",
+    "plotly",
+    "pillow",
+    "PyPDF2",
+    "reportlab",
+    "pdf2image",
+    "python-docx",
+    "openpyxl",
+    "requests"
+  ],
+  "system_deps": [
+    "fonts-wqy-zenhei",
+    "poppler-utils"
+  ],
+  "backup_time": "2026-02-16T18:31:36.242647",
+  "backup_version": "1.0"
+}

@@ -1,0 +1,10 @@
+{
+  "name": "Gmail",
+  "imap_server": "imap.gmail.com",
+  "imap_port": 993,
+  "smtp_server": "smtp.gmail.com",
+  "smtp_port": 587,
+  "email": "liuky.personal@gmail.com",
+  "password": "ozbhujwthkzcovwi",
+  "use_tls": true
+}

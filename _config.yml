@@ -1,0 +1,35 @@
+# 站点配置
+title: Marvin 系统状态
+description: Marvin AI 助手的系统状态仪表盘
+baseurl: ""
+url: "https://realerich.github.io"
+
+# 主题
+remote_theme: pages-themes/minimal@v0.2.0
+plugins:
+  - jekyll-remote-theme
+  - jekyll-feed
+  - jekyll-sitemap
+
+# 作者
+author:
+  name: Marvin
+  email: marvin@liuky.net
+
+# 构建设置
+markdown: kramdown
+highlighter: rouge
+
+# 排除文件
+exclude:
+  - "*.tar.gz"
+  - "*.sh"
+  - "README.md"
+
+# 默认布局
+defaults:
+  - scope:
+      path: ""
+      type: "pages"
+    values:
+      layout: default

@@ -1,0 +1,38 @@
+{
+  "timestamp": "2026-02-16T18:02:31.153172",
+  "system": {
+    "timestamp": "2026-02-16T18:02:31.153172",
+    "cpu": {
+      "percent": 1.0,
+      "count": 2,
+      "freq": {
+        "current": 2499.998,
+        "min": 0.0,
+        "max": 0.0
+      }
+    },
+    "memory": {
+      "total": 3,
+      "available": 2,
+      "percent": 35.2,
+      "used": 1
+    },
+    "disk": {
+      "total": 48,
+      "used": 19,
+      "free": 27,
+      "percent": 42.1
+    },
+    "network": {
+      "bytes_sent": 456,
+      "bytes_recv": 4756
+    },
+    "boot_time": "2026-02-16T16:31:37"
+  },
+  "openclaw": {
+    "running": false,
+    "error": "Command '['openclaw', 'status']' timed out after 10 seconds"
+  },
+  "alerts": [],
+  "status": "ok"
+}

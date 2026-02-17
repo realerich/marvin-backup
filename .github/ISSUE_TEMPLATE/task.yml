@@ -1,16 +1,12 @@
----
-name: 📋 任务
-description: 创建一个常规任务
-title: "[Task] "
+name: 日常任务
+description: 创建待办任务
+title: "[TASK] "
 labels: ["task"]
-assignees:
-  - realerich
 body:
   - type: textarea
-    id: description
+    id: task
     attributes:
-      label: 任务描述
-      description: 需要完成什么
+      label: 任务内容
     validations:
       required: true
       
@@ -19,15 +15,6 @@ body:
     attributes:
       label: 优先级
       options:
-        - P1
-        - P2
-        - P3
-    validations:
-      required: true
-      
-  - type: input
-    id: deadline
-    attributes:
-      label: 截止日期
-      description: 格式：YYYY-MM-DD
-      placeholder: "2026-02-20"
+        - 🔴 高
+        - 🟡 中
+        - 🟢 低

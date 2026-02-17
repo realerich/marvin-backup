@@ -1,0 +1,35 @@
+name: 系统警报
+description: 报告系统异常或警报
+title: "[ALERT] "
+labels: ["alert", "system"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 🚨 系统警报
+        
+  - type: dropdown
+    id: severity
+    attributes:
+      label: 严重级别
+      options:
+        - 🔴 严重 (系统不可用)
+        - 🟠 高 (功能严重受损)
+        - 🟡 中 (功能部分受损)
+        - 🟢 低 (轻微问题)
+    validations:
+      required: true
+      
+  - type: textarea
+    id: description
+    attributes:
+      label: 问题描述
+      description: 请详细描述问题
+    validations:
+      required: true
+      
+  - type: textarea
+    id: context
+    attributes:
+      label: 上下文信息
+      description: 相关的日志、错误信息等

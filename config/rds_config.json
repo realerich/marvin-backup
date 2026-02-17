@@ -1,0 +1,9 @@
+{
+  "host": "pgm-j6c0rrysy447d8tc.pg.rds.aliyuncs.com",
+  "port": 5432,
+  "database": "marvin_db",
+  "user": "marvin",
+  "password": "Crimson@13",
+  "type": "postgresql",
+  "created_at": "2026-02-16T19:37:17.906286"
+}
