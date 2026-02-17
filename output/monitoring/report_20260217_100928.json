@@ -1,0 +1,43 @@
+{
+  "timestamp": "2026-02-17T10:09:18.325726",
+  "system": {
+    "timestamp": "2026-02-17T10:09:18.325726",
+    "cpu": {
+      "percent": 0.5,
+      "count": 2,
+      "freq": {
+        "current": 2499.998,
+        "min": 0.0,
+        "max": 0.0
+      }
+    },
+    "memory": {
+      "total": 3,
+      "available": 2,
+      "percent": 39.9,
+      "used": 1
+    },
+    "disk": {
+      "total": 48,
+      "used": 19,
+      "free": 26,
+      "percent": 42.4
+    },
+    "network": {
+      "bytes_sent": 805,
+      "bytes_recv": 4865
+    },
+    "boot_time": "2026-02-16T16:31:37"
+  },
+  "openclaw": {
+    "running": true,
+    "output": "\u2502\n\u25c7  Config warnings \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256e\n\u2502                                                                          \u2502\n\u2502  - plugins.entries.feishu: plugin feishu: duplicate plugin id detected;  \u2502\n\u2502    later plugin may be overridden                                        \u2502\n\u2502    (/usr/lib/node_modules/openclaw/extensions/feishu/index.ts)           \u2502\n\u2502                                                                          \u2502\n\u251c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500"
+  },
+  "alerts": [],
+  "thresholds": {
+    "cpu": 80,
+    "memory": 85,
+    "disk": 90
+  },
+  "status": "ok"
+}
