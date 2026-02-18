@@ -1,5 +1,5 @@
 {
-  "checked_at": "2026-02-18T21:30:11.212207",
+  "checked_at": "2026-02-18T21:59:25.527958",
   "error": "invalid integer value \"= 5432\" for connection option \"port\"\n",
   "system": {
     "openclaw_status": "offline"
