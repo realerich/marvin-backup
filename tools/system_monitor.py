@@ -97,12 +97,42 @@ class SystemMonitor:
     def check_openclaw_status():
         """检查OpenClaw服务状态"""
         try:
-            result = subprocess.run(['openclaw', 'status'], 
-                                  capture_output=True, text=True, timeout=10)
+            # 方法1: 检查进程是否存在
+            result = subprocess.run(['pgrep', '-f', 'openclaw-gateway'], 
+                                  capture_output=True, text=True, timeout=5)
+            process_running = result.returncode == 0 and result.stdout.strip()
+            
+            if not process_running:
+                return {'running': False, 'error': '进程未运行'}
+            
+            # 方法2: 检查端口18789是否在监听
+            port_check = subprocess.run(
+                ['lsof', '-i', ':18789', '-sTCP:LISTEN'],
+                capture_output=True, text=True, timeout=5
+            )
+            port_listening = port_check.returncode == 0 and 'openclaw' in port_check.stdout
+            
+            if not port_listening:
+                return {'running': False, 'error': '端口18789未监听'}
+            
+            # 方法3: 尝试HTTP连接检查
+            try:
+                http_check = subprocess.run(
+                    ['curl', '-s', '-o', '/dev/null', '-w', '%{http_code}', 
+                     'http://localhost:18789/status'],
+                    capture_output=True, text=True, timeout=5
+                )
+                http_ok = http_check.stdout.strip() in ['200', '301', '302']
+            except:
+                http_ok = True  # 如果curl失败，但前面检查通过，仍认为正常
+            
             return {
-                'running': 'running' in result.stdout.lower(),
-                'output': result.stdout[:500]
+                'running': True,
+                'process': '运行中',
+                'port': '18789监听中',
+                'http': '正常' if http_ok else '响应异常'
             }
+            
         except Exception as e:
             return {'running': False, 'error': str(e)}
     
