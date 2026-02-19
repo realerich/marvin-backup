@@ -44,6 +44,10 @@ def sync_to_github(config, message=None):
     commit_msg = message or f"自动同步 - {datetime.now().strftime('%Y-%m-%d %H:%M')}"
     subprocess.run(['git', 'commit', '-m', commit_msg], check=True)
     
+    # 先拉取远程更改（避免冲突）
+    print("  📥 拉取远程更改...")
+    subprocess.run(['git', 'pull', 'origin', 'main', '--rebase'], check=False)
+    
     # 推送到 GitHub
     subprocess.run(['git', 'push', 'origin', 'main'], check=True)
     
