@@ -1,0 +1,45 @@
+{
+  "timestamp": "2026-02-19T12:00:36.777478",
+  "system": {
+    "timestamp": "2026-02-19T12:00:36.777478",
+    "cpu": {
+      "percent": 0.5,
+      "count": 2,
+      "freq": {
+        "current": 2499.998,
+        "min": 0.0,
+        "max": 0.0
+      }
+    },
+    "memory": {
+      "total": 3,
+      "available": 2,
+      "percent": 40.7,
+      "used": 1
+    },
+    "disk": {
+      "total": 48,
+      "used": 19,
+      "free": 26,
+      "percent": 42.6
+    },
+    "network": {
+      "bytes_sent": 1538,
+      "bytes_recv": 4959
+    },
+    "boot_time": "2026-02-16T16:31:37"
+  },
+  "openclaw": {
+    "running": true,
+    "process": "\u8fd0\u884c\u4e2d",
+    "port": "18789\u76d1\u542c\u4e2d",
+    "http": "\u6b63\u5e38"
+  },
+  "alerts": [],
+  "thresholds": {
+    "cpu": 80,
+    "memory": 85,
+    "disk": 90
+  },
+  "status": "ok"
+}
